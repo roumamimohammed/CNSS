@@ -22,8 +22,8 @@ public class Main {
         sendMail("hol","bonjour","mohammedroumami2016@gmail.com");
         Scanner scanner = new Scanner(System.in);
         int userChoice;
-        AgentCNSSDAO agentDAO = new AgentCNSSDAO(); // Create an instance of AgentCNSSDAO
-        PatientDAO patientDAO = new PatientDAO(); // Create an instance of PatientDAO
+        AgentCNSSDAO agentDAO = new AgentCNSSDAO();
+        PatientDAO patientDAO = new PatientDAO();
         DocumentsDAO documentsDAO = new DocumentsDAO();
         do {
             System.out.println("Main Menu:");

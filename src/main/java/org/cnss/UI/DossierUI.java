@@ -3,11 +3,13 @@ package org.cnss.UI;
 import org.cnss.Dao.AgentCNSSDAO;
 import org.cnss.Dao.DossierRembouresementDAO;
 import org.cnss.Dao.PatientDAO;
+import org.cnss.Ennum.Etat;
 import org.cnss.calclulators.MonTauxRemboursementCalculator;
 import org.cnss.model.AgentCNSS;
 import org.cnss.model.DossierRembouresement;
 import org.cnss.model.Patient;
 
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -26,9 +28,8 @@ public class DossierUI {
         do {
             System.out.println("\nMenu Dossiers de Remboursement:");
             System.out.println("1. Ajouter un Dossier");
-            System.out.println("2. Mettre à jour un Dossier");
+            System.out.println("2. Mettre à jour Etat Dossier ");
             System.out.println("3. Supprimer un Dossier");
-
             System.out.println("4. Afficher Mantant du rembourcement du dossier ");
             System.out.println("5. Quitter le Menu Dossiers");
             System.out.print("Entrez votre choix: ");
@@ -40,7 +41,7 @@ public class DossierUI {
                     AjouterDossier(agentCNSS);
                     break;
                 case 2:
-                    MettreAJourDossier();
+                    MettreAJourEtatDossier();
                     break;
                 case 3:
                     SupprimerDossier();
@@ -48,6 +49,7 @@ public class DossierUI {
                 case 4:
                     Mantantrembourcementdossier();
                     break;
+
                 case 5:
                     System.out.println("Retour au Menu Principal.");
                     break;
@@ -83,19 +85,6 @@ public class DossierUI {
     }
 
 
-    public static void MettreAJourDossier() {
-        System.out.println("Mettre à jour un Dossier:");
-        System.out.print("Entrez le code du dossier que vous souhaitez mettre à jour: ");
-        int codeDossier = scanner.nextInt();
-        scanner.nextLine();
-
-        DossierRembouresement dossier = recherchedossierparcode(codeDossier);
-        if (dossier != null) {
-            // Mettre à jour le dossier ici (état, montant, etc.)
-            // dossierRembouresementDAO.updateDossierRemboursement(dossier);
-            System.out.println("Dossier mis à jour avec succès.");
-        }
-    }
 
     public static void SupprimerDossier() {
         System.out.println("Supprimer un Dossier:");
@@ -145,4 +134,37 @@ public class DossierUI {
         System.out.print("le taux de rembourcement est: "+TauxRemboursementCalculator +" DH");
 
     }
+    public static void MettreAJourEtatDossier() {
+        try {
+            System.out.println("Mettre à jour l'état du dossier :");
+            System.out.print("Entrez le code du dossier que vous souhaitez mettre à jour : ");
+            int codeDossier = scanner.nextInt();
+            scanner.nextLine();
+
+            DossierRembouresement dossier = recherchedossierparcode(codeDossier);
+
+            if (dossier != null) {
+                System.out.println("États possibles : ");
+                for (Etat etat : Etat.values()) {
+                    System.out.println(etat.toString());
+                }
+
+                System.out.print("Choisissez le nouvel état du dossier : ");
+                String nouvelEtatString = scanner.nextLine();
+                try {
+                    Etat nouvelEtat = Etat.valueOf(nouvelEtatString);
+
+                    dossier.setEtat(nouvelEtat);
+                    dossierRembouresementDAO.updateEtatDossier(dossier);
+                } catch (IllegalArgumentException e) {
+                    System.out.println("État invalide. Assurez-vous d'utiliser un état valide.");
+                }
+            } else {
+                System.out.println("Dossier introuvable.");
+            }
+        } catch (InputMismatchException e) {
+            System.out.println("Code de dossier invalide. Assurez-vous d'entrer un nombre entier.");
+        }
+    }
+
 }

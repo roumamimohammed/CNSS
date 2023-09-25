@@ -163,7 +163,7 @@ public class DossierRembouresementDAO {
     public List<DossierRembouresement> getDossierParPatient(Patient patient) {
         List<DossierRembouresement> dossiers = new ArrayList<>();
         try {
-            String selectQuery = "SELECT * FROM dossie WHERE patient = ?";
+            String selectQuery = "SELECT * FROM dossier WHERE patient = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(selectQuery);
             preparedStatement.setInt(1, patient.getMatricule());
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -190,6 +190,26 @@ public class DossierRembouresementDAO {
         }
 
         return dossiers;
+    }
+    public void updateEtatDossier(DossierRembouresement dossier) {
+        try {
+            String updateQuery = "UPDATE dossier SET etat = ? WHERE code = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
+            preparedStatement.setString(1, dossier.getEtat().toString());
+            preparedStatement.setInt(2, dossier.getCode());
+
+            int rowsUpdated = preparedStatement.executeUpdate();
+
+            if (rowsUpdated == 0) {
+                System.out.println("Aucun dossier mis à jour. Vérifiez le code du dossier.");
+            } else {
+                System.out.println("Dossier mis à jour avec succès !");
+            }
+
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -4,18 +4,20 @@ import org.cnss.Dao.DocumentsDAO;
 import org.cnss.Ennum.Etat;
 import org.cnss.model.Document;
 import org.cnss.model.DossierRembouresement;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class MonTauxRemboursementCalculator implements TauxRemboursementCalculator {
+    DocumentsDAO documentsDAO=new  DocumentsDAO();
     @Override
     public double calculerTauxRemboursement(DossierRembouresement dossier) {
-        List<Document> documentsdossier = DocumentsDAO.getDocumentPardossier(dossier);
-        Document[] documentsDossier = new Document[0];
+        ArrayList<Document> documentsdossier = documentsDAO.getDocumentPardossier(dossier);
 
         double totalRemboursement = 0.0;
 
-        if (dossier.getEtat() == Etat.VALIDE) {
-            for (Document document : documentsDossier) {
+        if (Etat.VALIDE.equals(dossier.getEtat())) {
+            for (Document document : documentsdossier) {
                 double montantDocument = document.getMontant();
                 double tauxDocument = document.getTaux() / 100.0;
                 double remboursementDocument = montantDocument * tauxDocument;

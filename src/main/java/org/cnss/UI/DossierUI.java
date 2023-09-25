@@ -3,9 +3,12 @@ package org.cnss.UI;
 import org.cnss.Dao.AgentCNSSDAO;
 import org.cnss.Dao.DossierRembouresementDAO;
 import org.cnss.Dao.PatientDAO;
+import org.cnss.calclulators.MonTauxRemboursementCalculator;
 import org.cnss.model.AgentCNSS;
 import org.cnss.model.DossierRembouresement;
 import org.cnss.model.Patient;
+
+import java.util.List;
 import java.util.Scanner;
 
 import static org.cnss.UI.DocumentUI.AjouterDocument;
@@ -14,6 +17,8 @@ public class DossierUI {
     static DossierRembouresementDAO dossierRembouresementDAO = new DossierRembouresementDAO();
     PatientDAO patientDAO = new PatientDAO();
     AgentCNSSDAO agentCNSS=new AgentCNSSDAO();
+    static MonTauxRemboursementCalculator monTauxRemboursementCalculator=new MonTauxRemboursementCalculator();
+
     static Scanner scanner = new Scanner(System.in);
     public static void AfficherMenuDossiers(Scanner scanner, AgentCNSSDAO agentCNSS) {
         int choix;
@@ -23,10 +28,12 @@ public class DossierUI {
             System.out.println("1. Ajouter un Dossier");
             System.out.println("2. Mettre à jour un Dossier");
             System.out.println("3. Supprimer un Dossier");
-            System.out.println("4. Quitter le Menu Dossiers");
+
+            System.out.println("4. Afficher Mantant du rembourcement du dossier ");
+            System.out.println("5. Quitter le Menu Dossiers");
             System.out.print("Entrez votre choix: ");
             choix = scanner.nextInt();
-            scanner.nextLine(); // Consommer la nouvelle ligne
+            scanner.nextLine();
 
             switch (choix) {
                 case 1:
@@ -39,6 +46,9 @@ public class DossierUI {
                     SupprimerDossier();
                     break;
                 case 4:
+                    Mantantrembourcementdossier();
+                    break;
+                case 5:
                     System.out.println("Retour au Menu Principal.");
                     break;
                 default:
@@ -50,7 +60,6 @@ public class DossierUI {
 
     public static void AjouterDossier(AgentCNSSDAO agentCNSSDAO) {
         Scanner scanner = new Scanner(System.in);
-        // Obtenez l'agent CNSS actuellement connecté en utilisant la classe AgentCnssUI
         String agentConnecteEmail = AgentCnssUI.getAgentConnecteEmail();
         AgentCNSS agentCNSS = agentCNSSDAO.getAgentParEmail(agentConnecteEmail);
         PatientDAO patientDAO = new PatientDAO();
@@ -58,14 +67,13 @@ public class DossierUI {
         System.out.println("Choisir le patient pour le dossier:");
         patientDAO.afficherTousLespatients();
         int codePatient = scanner.nextInt();
-        scanner.nextLine(); // Consommer la nouvelle ligne
+        scanner.nextLine();
         Patient patientTrouve = patientDAO.getPatientParMatricule(codePatient);
 
         if (patientTrouve != null) {
             DossierRembouresement dossier = dossierRembouresementDAO.ajouterDossierRemboursement(agentCNSS, patientTrouve);
             if (dossier != null) {
                 System.out.println("Dossier ajouté avec succès.");
-                AjouterDocument();
             } else {
                 System.out.println("Échec de l'ajout du dossier.");
             }
@@ -79,7 +87,7 @@ public class DossierUI {
         System.out.println("Mettre à jour un Dossier:");
         System.out.print("Entrez le code du dossier que vous souhaitez mettre à jour: ");
         int codeDossier = scanner.nextInt();
-        scanner.nextLine(); // Consommer la nouvelle ligne
+        scanner.nextLine();
 
         DossierRembouresement dossier = recherchedossierparcode(codeDossier);
         if (dossier != null) {
@@ -112,5 +120,29 @@ public class DossierUI {
             System.out.println("Aucun dossier trouvé avec le code saisi.");
         }
         return dossierRembouresement;
+    }
+    public static void AfficherTousLesDossiers() {
+        List<DossierRembouresement> dossiers = dossierRembouresementDAO.getAllDossier();
+
+        if (dossiers.isEmpty()) {
+            System.out.println("Aucun dossier trouvé.");
+        } else {
+            System.out.println("Liste de tous les dossiers:");
+            for (DossierRembouresement dossier : dossiers) {
+                System.out.println("Code Dossier: " + dossier.getCode());
+                System.out.println("Patient: " + dossier.getPatient().getNom() + " " + dossier.getPatient().getPrenom());
+                System.out.println("--------------------------");
+            }
+        }
+    }
+    public static  void Mantantrembourcementdossier(){
+        System.out.print("Entrez le code du dossier que vous souhaitez : ");
+        int codeDossier = scanner.nextInt();
+        scanner.nextLine();
+
+        DossierRembouresement dossier = recherchedossierparcode(codeDossier);
+        double TauxRemboursementCalculator=monTauxRemboursementCalculator.calculerTauxRemboursement(dossier);
+        System.out.print("le taux de rembourcement est: "+TauxRemboursementCalculator +" DH");
+
     }
 }

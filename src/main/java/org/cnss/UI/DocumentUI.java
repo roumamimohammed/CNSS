@@ -20,17 +20,18 @@ public class DocumentUI {
     static DocumentsDAO documentsDAO = new DocumentsDAO();
 
     public static void AjouterDocument() {
-        Scanner scanner = new Scanner(System.in); // Create a new scanner instance
+        Scanner scanner = new Scanner(System.in);
         System.out.println("Saisir le code du document:");
         String Code_document = scanner.nextLine();
+        DossierUI.AfficherTousLesDossiers();
         System.out.println("Saisir le code du dossier:");
-        int Code_dossier = Integer.parseInt(scanner.nextLine()); // Parse the integer input
+        int Code_dossier = Integer.parseInt(scanner.nextLine());
 
         DossierRembouresement dossier = DossierUI.recherchedossierparcode(Code_dossier);
 
         System.out.println("Choisir la catégorie du document:");
         CategoriesUI.afficherListCategories();
-        int Code_categorie = Integer.parseInt(scanner.nextLine()); // Parse the integer input
+        int Code_categorie = Integer.parseInt(scanner.nextLine());
         Categories categorie_document = categorieDAO.getCategoriesParcode(Code_categorie);
 
         if (categorie_document != null) {
@@ -39,10 +40,10 @@ public class DocumentUI {
                 String Nom_medicament = scanner.nextLine();
                 MedicamentUI.afficherListMedicamentRechercher(Nom_medicament);
                 System.out.println("Choisir le médicament:");
-                int Code_medicament = Integer.parseInt(scanner.nextLine()); // Parse the integer input
+                int Code_medicament = Integer.parseInt(scanner.nextLine());
                 Medicament medicament = medicamentDAO.rechercherMedicamentParCode(Code_medicament);
 
-                if (medicament != null) { // Check if medicament is not null
+                if (medicament != null) {
                     int prix = medicament.getPrix();
                     int taux_remboursement = medicament.getTaux_remboursement();
                     Document document = new Document(Code_document, prix, categorie_document, dossier, taux_remboursement);
@@ -61,7 +62,6 @@ public class DocumentUI {
             System.out.println("Catégorie invalide sélectionnée.");
         }
 
-        // Close the scanner
         scanner.close();
     }
 

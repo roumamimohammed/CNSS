@@ -7,10 +7,12 @@ import org.cnss.model.Patient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
-import static org.cnss.UI.AdminUI.scanner;
 
 public class PatientUI {
+    static Scanner scanner = new Scanner(System.in);
+
     static PatientDAO patientDAO = new PatientDAO();
     static DossierRembouresementDAO dossierRembouresementDAO=new DossierRembouresementDAO();
 

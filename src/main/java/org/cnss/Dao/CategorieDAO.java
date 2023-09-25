@@ -3,13 +3,16 @@ package org.cnss.Dao;
 import org.cnss.DataBase.DatabaseConnection;
 import org.cnss.model.AgentCNSS;
 import org.cnss.model.Categories;
+import org.cnss.model.Document;
+import org.cnss.model.DossierRembouresement;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class CategorieDAO {
 
-    private Connection connection;
+    private  Connection connection;
 
     public CategorieDAO() {
         try {
@@ -67,4 +70,5 @@ public class CategorieDAO {
 
         return categories;
     }
+
 }

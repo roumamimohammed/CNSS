@@ -20,7 +20,6 @@ public class AdminUI {
         String code = scanner.nextLine();
         Administrateur authenticatedAdmin = administrateurDAO.authentifier(email,code);
         if (authenticatedAdmin != null) {
-            // Call the Administrator Menu
             administratorMenu(scanner, agentDAO);
         }
     }
@@ -51,58 +50,16 @@ public class AdminUI {
 
                         switch (agentManagementChoice) {
                             case 1:
-                                // Add a new Agent
-                                System.out.print("Enter Agent Name: ");
-                                String agentName = scanner.nextLine();
-                                System.out.print("Enter Agent Email: ");
-                                String agentEmail = scanner.nextLine();
-                                System.out.print("Enter Agent Code: ");
-                                String agentCode = scanner.nextLine();
-
-                                String addedAgent = agentDAO.ajoutAgentCnss(agentName, agentEmail, agentCode);
-                                if (addedAgent != null) {
-                                    System.out.println("Agent added successfully: " + addedAgent);
-                                } else {
-                                    System.out.println("Failed to add Agent.");
-                                }
+                                addNewAgent();
                                 break;
                             case 2:
-                                // Update Agent information
-
-                                System.out.print("Enter Agent Email to update: ");
-                                String agentToUpdateEmail = scanner.nextLine();
-                                System.out.print("Enter new Agent Name: ");
-                                String newAgentName = scanner.nextLine();
-                                System.out.print("Enter new Agent Email: ");
-                                String newAgentEmail = scanner.nextLine();
-
-                                boolean updated = agentDAO.updateAgentCnss(agentToUpdateEmail, newAgentName,newAgentEmail);
-
-                                if (updated) {
-                                    System.out.println("Agent updated successfully.");
-                                } else {
-                                    System.out.println("Failed to update Agent.");
-                                }
+                                updateAgentInformation();
                                 break;
                             case 3:
-                                // Delete Agent
-                                System.out.print("Enter Agent Email to delete: ");
-                                String agentToDeleteEmail = scanner.nextLine();
-
-                                boolean deleted = agentDAO.deleteAgentCnss(agentToDeleteEmail);
-
-                                if (deleted) {
-                                    System.out.println("Agent deleted successfully.");
-                                } else {
-                                    System.out.println("Failed to delete Agent.");
-                                }
+                                deleteAgent();
                                 break;
                             case 4:
-                                // View All Agents
-                                ArrayList<AgentCNSS> agents = agentDAO.afficherTousLesAgents();
-                                for (AgentCNSS agent : agents) {
-                                    System.out.println("Name: " + agent.getNom() + ", Email: " + agent.getEmail());
-                                }
+                                viewAllAgents();
                                 break;
                             case 5:
                                 System.out.println("Logged out as Agent CNSS.");
@@ -122,5 +79,57 @@ public class AdminUI {
             }
         } while (adminChoice != 2);
     }
+        private static void addNewAgent() {
+        System.out.print("Enter Agent Name: ");
+        String agentName = scanner.nextLine();
+        System.out.print("Enter Agent Email: ");
+        String agentEmail = scanner.nextLine();
+        System.out.print("Enter Agent Code: ");
+        String agentCode = scanner.nextLine();
+
+        String addedAgent = agentDAO.ajoutAgentCnss(agentName, agentEmail, agentCode);
+        if (addedAgent != null) {
+            System.out.println("Agent added successfully: " + addedAgent);
+        } else {
+            System.out.println("Failed to add Agent.");
+        }
+    }
+        private static void updateAgentInformation() {
+            System.out.print("Enter Agent Email to update: ");
+            String agentToUpdateEmail = scanner.nextLine();
+            System.out.print("Enter new Agent Name: ");
+            String newAgentName = scanner.nextLine();
+            System.out.print("Enter new Agent Email: ");
+            String newAgentEmail = scanner.nextLine();
+
+            boolean updated = agentDAO.updateAgentCnss(agentToUpdateEmail, newAgentName, newAgentEmail);
+
+            if (updated) {
+                System.out.println("Agent updated successfully.");
+            } else {
+                System.out.println("Failed to update Agent.");
+            }
+        }
+
+        private static void deleteAgent() {
+            System.out.print("Enter Agent Email to delete: ");
+            String agentToDeleteEmail = scanner.nextLine();
+
+            boolean deleted = agentDAO.deleteAgentCnss(agentToDeleteEmail);
+
+            if (deleted) {
+                System.out.println("Agent deleted successfully.");
+            } else {
+                System.out.println("Failed to delete Agent.");
+            }
+        }
+
+        private static void viewAllAgents() {
+            ArrayList<AgentCNSS> agents = agentDAO.afficherTousLesAgents();
+            for (AgentCNSS agent : agents) {
+                System.out.println("Name: " + agent.getNom() + ", Email: " + agent.getEmail());
+            }
+        }
+
 
 }

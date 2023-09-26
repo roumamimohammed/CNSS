@@ -130,7 +130,8 @@ public class DossierUI {
         scanner.nextLine();
 
         DossierRembouresement dossier = recherchedossierparcode(codeDossier);
-        double TauxRemboursementCalculator=monTauxRemboursementCalculator.calculerTauxRemboursement(dossier);
+        MonTauxRemboursementCalculator monTauxRemboursementCalculator = new MonTauxRemboursementCalculator();
+        double TauxRemboursementCalculator = monTauxRemboursementCalculator.calculerTauxRemboursement(dossier);
         System.out.print("le taux de rembourcement est: "+TauxRemboursementCalculator +" DH");
 
     }

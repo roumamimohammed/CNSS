@@ -1,5 +1,7 @@
 package org.cnss.model;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 public class AgentCNSS {
@@ -7,18 +9,35 @@ public class AgentCNSS {
         private String email;
         private String motDePasse;
         private int codeVerification;
-
+        private Timestamp getCodeExpiration;
         private int active;
+
+
+    public Timestamp getCodeExpiration() {
+        return CodeExpiration;
+    }
+
+    public void setCodeExpiration(Timestamp codeExpiration) {
+        CodeExpiration = codeExpiration;
+    }
+
+    private Timestamp CodeExpiration;
+
+
+
+
+
 
     public int getActive() {
         return active;
     }
 
-    public AgentCNSS(String nom, String motDePasse, String email, int codeVerification, int active ) {
+    public AgentCNSS(String nom, String motDePasse, String email, int codeVerification,Timestamp CodeExpiration, int active ) {
             this.nom = nom;
             this.email = email;
             this.motDePasse = motDePasse;
             this.codeVerification = codeVerification;
+            this.CodeExpiration=CodeExpiration;
             this.active=active;
         }
 
@@ -56,6 +75,8 @@ public class AgentCNSS {
         public void setCodeVerification(int codeVerification) {
             this.codeVerification = codeVerification;
         }
-    }
+
+
+}
 
 

@@ -25,7 +25,7 @@ public class AdminUI {
     }
     public static void administratorMenu(Scanner scanner, AgentCNSSDAO agentDAO) {
         int adminChoice;
-        do {
+        while (true) {
             System.out.println("\nAdministrator Menu:");
             System.out.println("1. Agent Management");
             System.out.println("2. Quit (Log Out)");
@@ -37,13 +37,14 @@ public class AdminUI {
                 case 1:
                     // Agent CNSS Management Menu
                     int agentManagementChoice;
-                    do {
+                    while (true){
                         System.out.println("\nAgent CNSS Management Menu:");
                         System.out.println("1. Add a new Agent");
                         System.out.println("2. Update Agent information");
                         System.out.println("3. Delete Agent");
                         System.out.println("4. View All Agents");
-                        System.out.println("5. Quit (Log Out)");
+                        System.out.println("5. Active Agents");
+                        System.out.println("6. Quit (Log Out)");
                         System.out.print("Enter your choice: ");
                         agentManagementChoice = scanner.nextInt();
                         scanner.nextLine();
@@ -62,22 +63,30 @@ public class AdminUI {
                                 viewAllAgents();
                                 break;
                             case 5:
-                                System.out.println("Logged out as Agent CNSS.");
+                                ArrayList<AgentCNSS> agent = agentDAO.afficherTousLesAgentsdesactiver();
+                                for (AgentCNSS agen : agent) {
+                                    System.out.println("Name: " + agen.getNom() + ", Email: " + agen.getEmail());
+                                }
+                                String enteredEmail = scanner.nextLine();
+                                agentDAO.activateAgent(enteredEmail);
                                 break;
+                            case 6:
+                                System.out.println("Logged out as Agent CNSS.");
+                                return;
+
                             default:
                                 System.out.println("Invalid choice. Please try again.");
                                 break;
                         }
-                    } while (agentManagementChoice != 5);
-                    break;
+                    }
                 case 2:
                     System.out.println("Logged out as Administrator.");
-                    break;
+                    return;
                 default:
                     System.out.println("Invalid choice. Please try again.");
                     break;
             }
-        } while (adminChoice != 2);
+        }
     }
         private static void addNewAgent() {
         System.out.print("Enter Agent Name: ");

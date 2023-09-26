@@ -1,5 +1,8 @@
 package org.cnss.Dao;
 
+import java.sql.Timestamp;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import com.sun.mail.util.MailSSLSocketFactory;
 import org.cnss.DataBase.DatabaseConnection;
 import org.cnss.model.AgentCNSS;
@@ -30,19 +33,26 @@ public class AgentCNSSDAO {
         }
     }
 
-    public AgentCNSS Authentified(String enteredEmail,String enteredPassword) {
-        // Verify credentials and check "Active" attribute
-        // Verify credentials and check "Active" attribute
+    public AgentCNSS Authentified(String enteredEmail, String enteredPassword,int Code_Verification) throws GeneralSecurityException {
         AgentCNSS agent = getAgentByEmail(enteredEmail);
+        Scanner scanner = new Scanner(System.in);
         if (isBlocked(enteredEmail)) {
-            System.out.println("Votre compte est bloqué. Veuillez contacter l'administrateur.");
-            return null;
+            System.out.println("Votre compte est bloqué. Entrer votre message à l'administrateur pour vous débloquer.");
+            String enteredObject = scanner.nextLine();
+            sendMail(enteredObject, "Blocked", "mohammedroumami2016@gmail.com");
         }
-        if (agent != null && agent.getMotDePasse().equals(enteredPassword)) {
-            if (isActive(agent.getEmail())) { // Check if the agent is active
+        if (agent != null && agent.getMotDePasse().equals(enteredPassword) && agent.getCodeVerification()==Code_Verification) {
+            if (isActive(agent.getEmail())) {
                 loginAttempts = 0;
-                System.out.println("Authentification réussie.");
-                return agent; // Return the authenticated agent
+
+                if (isVerificationCodeValid(agent)) {
+                    System.out.println("Authentification réussie.");
+                    return agent;
+                } else {
+                    System.out.println("Votre code de vérification a expiré. Un nouveau code a été généré.");
+                    generateAndSendVerificationCode(agent.getEmail());
+                    return null;
+                }
             } else {
                 System.out.println("Votre compte est désactivé. Veuillez contacter l'administrateur.");
                 return null;
@@ -54,15 +64,59 @@ public class AgentCNSSDAO {
             if (loginAttempts >= 3) {
                 isBlocked = true;
                 System.out.println("Votre compte est maintenant bloqué après 3 échecs.");
-                // Set the "Active" attribute to 0 in the database for this user
                 deactivateAgent(agent.getEmail());
             }
             return null;
         }
     }
 
+    private boolean isVerificationCodeValid(AgentCNSS agent) {
+        Timestamp expirationTime = agent.getCodeExpiration();
+        if (expirationTime != null) {
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            return !currentTime.after(expirationTime); // Check if current time is not after expiration time
+        }
+        return false;
+    }
 
-    // Méthode pour récupérer un agent par son email depuis la base de données
+    private void generateAndSendVerificationCode(String email) throws GeneralSecurityException {
+        String newVerificationCode = generateVerificationCode();
+        updateVerificationCode(email, newVerificationCode);
+        sendVerificationCodeByEmail(newVerificationCode);
+    }
+
+    private void updateVerificationCode(String email, String verificationCode) {
+        try {
+            // Calculate the expiration time (e.g., 5 minutes from now)
+            long currentTimeMillis = System.currentTimeMillis();
+            long expirationTimeMillis = currentTimeMillis + (5 * 60 * 1000); // 5 minutes in milliseconds
+            Timestamp expirationTime = new Timestamp(expirationTimeMillis);
+
+            String updateQuery = "UPDATE agences SET Code_Verification = ?, Code_Expiration = ? WHERE Email = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
+            preparedStatement.setString(1, verificationCode);
+            preparedStatement.setTimestamp(2, expirationTime);
+            preparedStatement.setString(3, email);
+
+            int rowsUpdated = preparedStatement.executeUpdate();
+
+            preparedStatement.close();
+
+            if (rowsUpdated > 0) {
+                System.out.println("Verification code updated successfully.");
+            } else {
+                System.out.println("Failed to update verification code.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendVerificationCodeByEmail( String newVerificationCode) throws GeneralSecurityException {
+
+        String emailSubject = "New Verification Code";
+        sendMail(newVerificationCode, emailSubject, "mohammedroumami2016@gmail.com");
+    }
     private AgentCNSS getAgentByEmail(String email) {
         String sql = "SELECT * FROM agences WHERE Email = ?";
         PreparedStatement preparedStatement = null;
@@ -75,11 +129,12 @@ public class AgentCNSSDAO {
             resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                String nom = resultSet.getString("Email"); // Modifier ici pour correspondre à votre structure
-                String motDePasse = resultSet.getString("Pass"); // Modifier ici pour correspondre à votre structure
-                int codeVerification = resultSet.getInt("Code_Verification"); // Modifier ici pour correspondre à votre structure
-                int active = resultSet.getInt("Active"); // Modifier ici pour correspondre à votre structure
-                agent = new AgentCNSS(nom, motDePasse, email, codeVerification, active);
+                String nom = resultSet.getString("Email");
+                String motDePasse = resultSet.getString("Pass");
+                int codeVerification = resultSet.getInt("Code_Verification");
+                Timestamp CodeExpiration=resultSet.getTimestamp("Code_Expiration");
+                int active = resultSet.getInt("Active");
+                agent = new AgentCNSS(nom, motDePasse, email, codeVerification,CodeExpiration, active);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -99,7 +154,6 @@ public class AgentCNSSDAO {
         return agent;
     }
 
-    // Méthode pour désactiver un agent en mettant "Active" à 0 dans la base de données
     private void deactivateAgent(String email) {
         String sql = "UPDATE agences SET Active = 0 WHERE Email = ?";
         PreparedStatement preparedStatement = null;
@@ -120,7 +174,28 @@ public class AgentCNSSDAO {
             }
         }
     }
-    // Update the isBlocked method to send an email to the admin
+
+
+    public void activateAgent(String email) {
+        String sql = "UPDATE agences SET Active = 1 WHERE Email = ?";
+        PreparedStatement preparedStatement = null;
+
+        try {
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, email);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (preparedStatement != null) {
+                    preparedStatement.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     public boolean isBlocked(String email) {
         String sql = "SELECT Active FROM agences WHERE Email = ?";
         PreparedStatement preparedStatement = null;
@@ -230,6 +305,10 @@ public class AgentCNSSDAO {
 
         return isActive;
     }
+
+
+// ...
+
     public String ajoutAgentCnss(String Nom, String email, String code) {
         String Nomagent = null;
         try {
@@ -238,26 +317,43 @@ public class AgentCNSSDAO {
             if (existingAgent != null) {
                 System.out.println("Cette adresse e-mail est déjà associée à une agence existante");
                 return null;
-            }else {
-                String insertQuery = "INSERT INTO agences (Email, Pass, Nom,Active) VALUES (?,?,?,1)";
+            } else {
+                String verificationCode = generateVerificationCode();
+                Timestamp expirationTime = new Timestamp(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5));
+
+                String insertQuery = "INSERT INTO agences (Email, Pass, Nom, Active, Code_Verification, Code_Expiration) VALUES (?, ?, ?, 1, ?, ?)";
                 PreparedStatement preparedStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
                 preparedStatement.setString(1, email);
                 preparedStatement.setString(2, code);
                 preparedStatement.setString(3, Nom);
+                preparedStatement.setString(4, verificationCode);
+                preparedStatement.setTimestamp(5, expirationTime);
 
                 preparedStatement.executeUpdate();
 
                 Nomagent = Nom;
 
-
                 preparedStatement.close();
+
+                String emailSubject = "Verification Code";
+                String emailBody = "Your verification code is: " + verificationCode;
+                sendMail(emailBody, emailSubject, "mohammedroumami2016@gmail.com");
             }
-        } catch (SQLException e) {
+        } catch (SQLException | GeneralSecurityException e) {
             e.printStackTrace();
         }
         return Nomagent;
     }
-    public boolean updateAgentCnss( String email , String nouveauNom, String nouveauEmail) {
+
+    private String generateVerificationCode() {
+        Random random = new Random();
+        int min = 100000;
+        int max = 999999;
+        int code = random.nextInt((max - min) + 1) + min;
+        return String.valueOf(code);
+    }
+
+     public boolean updateAgentCnss( String email , String nouveauNom, String nouveauEmail) {
         try {
             AgentCNSS existingAgent = getAgentParEmail(email);
 
@@ -315,6 +411,32 @@ public class AgentCNSSDAO {
             return false;
         }
     }
+
+    public ArrayList<AgentCNSS> afficherTousLesAgentsdesactiver() {
+        ArrayList<AgentCNSS> agents = new ArrayList<>();
+        try {
+            String selectQuery = "SELECT * FROM agences WHERE Active=0";
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(selectQuery);
+
+            while (resultSet.next()) {
+                String nom = resultSet.getString("Nom");
+                String email = resultSet.getString("Email");
+                String code = resultSet.getString("Pass");
+                int Code_Verification = resultSet.getInt("Code_Verification");
+                Timestamp CodeExpiration=resultSet.getTimestamp("Code_Expiration");
+                AgentCNSS agent = new AgentCNSS(nom,code,email,Code_Verification,CodeExpiration,1);
+                agents.add(agent);
+            }
+
+            resultSet.close();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return agents;
+    }
     public ArrayList<AgentCNSS> afficherTousLesAgents() {
         ArrayList<AgentCNSS> agents = new ArrayList<>();
         try {
@@ -327,8 +449,9 @@ public class AgentCNSSDAO {
                 String email = resultSet.getString("Email");
                 String code = resultSet.getString("Pass");
                 int Code_Verification = resultSet.getInt("Code_Verification");
+                Timestamp CodeExpiration=resultSet.getTimestamp("Code_Expiration");
 
-                AgentCNSS agent = new AgentCNSS(nom,code,email,Code_Verification,1);
+                AgentCNSS agent = new AgentCNSS(nom,code,email,Code_Verification,CodeExpiration,1);
                 agents.add(agent);
             }
 
@@ -352,9 +475,9 @@ public class AgentCNSSDAO {
             if (resultSet.next()) {
                 String nom = resultSet.getString("Nom");
                 String code = resultSet.getString("Pass");
+                Timestamp CodeExpiration=resultSet.getTimestamp("Code_Expiration");
                 int codeVerification = resultSet.getInt("Code_Verification");
-
-                agent = new AgentCNSS(nom, code, email, codeVerification,1);
+                agent = new AgentCNSS(nom, code, email, codeVerification,CodeExpiration,1);
             }
 
             resultSet.close();

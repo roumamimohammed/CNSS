@@ -5,20 +5,23 @@ import org.cnss.model.AgentCNSS;
 import org.cnss.Dao.AgentCNSSDAO;
 import org.cnss.model.Patient;
 
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class AgentCnssUI {
     private static String agentConnecteEmail;
     static Scanner scanner = new Scanner(System.in);
-    static  AgentCNSSDAO agentDAO = new AgentCNSSDAO(); // Create an instance of AgentCNSSDAO
+    static  AgentCNSSDAO agentDAO = new AgentCNSSDAO();
     static PatientDAO patientDAO = new PatientDAO();
-    public static void Authentified(){
+    public static void Authentified() throws GeneralSecurityException {
         System.out.print("Entrez votre email : ");
         String enteredEmail = scanner.nextLine();
         System.out.print("Entrez votre mot de passe : ");
         String enteredPassword = scanner.nextLine();
-        AgentCNSS authenticatedAgent = agentDAO.Authentified(enteredEmail,enteredPassword);
+        System.out.print("Entrez Le Code De verification : ");
+        int Code_Verification = Integer.parseInt(scanner.nextLine());
+        AgentCNSS authenticatedAgent = agentDAO.Authentified(enteredEmail,enteredPassword, Code_Verification);
         if (authenticatedAgent != null) {
             agentConnecteEmail = enteredEmail;
             agentMenu(scanner, agentDAO, patientDAO);
@@ -31,7 +34,6 @@ public class AgentCnssUI {
     }
     public static void agentMenu(Scanner scanner, AgentCNSSDAO agentDAO, PatientDAO patientDAO) {
         int agentChoice;
-        do {
             System.out.println("\nAgent CNSS Menu:");
             System.out.println("1. Patient Management");
             System.out.println("2. Dossier Management");
@@ -63,12 +65,12 @@ public class AgentCnssUI {
                     System.out.println("Invalid choice. Please try again.");
                     break;
             }
-        } while (agentChoice != 2);
+
     }
 
  public  static void  PatientManagementMenu(){
      int patientManagementChoice;
-     do {
+     while (true){
          System.out.println("\nPatient Management Menu:");
          System.out.println("1. Add a new Patient");
          System.out.println("2. Update Patient information");
@@ -81,30 +83,25 @@ public class AgentCnssUI {
 
          switch (patientManagementChoice) {
              case 1:
-                 // Add a new Patient
                  AddnewPatient();
                  break;
              case 2:
-                 // Update Patient information
                  UpdatePatientinformation();
                  break;
              case 3:
-                 // Delete Patient
                  DeletePatient();
                  break;
              case 4:
-                 // View All Patients
                  ViewAllPatients();
                  break;
              case 5:
                  System.out.println("Logged out as Agent CNSS.");
-                 break;
+                 return;
              default:
                  System.out.println("Invalid choice. Please try again.");
-                 break;
+                 return;
          }
-     } while (patientManagementChoice != 5);
- }
+ }}
     public  static void AddnewPatient(){
      System.out.print("Enter Patient Name: ");
      String patientName = scanner.nextLine();
@@ -154,4 +151,6 @@ public class AgentCnssUI {
             System.out.println("Matricule: " + patient.getMatricule() + ", Name: " + patient.getNom() + ", Surname: " + patient.getPrenom());
         }
     }
+
+
 }

@@ -1,5 +1,7 @@
 package org.cnss.Dao;
 
+import java.util.HashMap;
+import org.mindrot.jbcrypt.BCrypt;
 import java.sql.Timestamp;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -32,8 +34,8 @@ public class AgentCNSSDAO {
             e.printStackTrace();
         }
     }
-
-    public AgentCNSS Authentified(String enteredEmail, String enteredPassword,int Code_Verification) throws GeneralSecurityException {
+    private HashMap<String, AgentCNSS> agentMap = new HashMap<>();
+    public AgentCNSS Authentified(String enteredEmail, String enteredPassword, int Code_Verification) throws GeneralSecurityException {
         AgentCNSS agent = getAgentByEmail(enteredEmail);
         Scanner scanner = new Scanner(System.in);
         if (isBlocked(enteredEmail)) {
@@ -41,7 +43,7 @@ public class AgentCNSSDAO {
             String enteredObject = scanner.nextLine();
             sendMail(enteredObject, "Blocked", "mohammedroumami2016@gmail.com");
         }
-        if (agent != null && agent.getMotDePasse().equals(enteredPassword) && agent.getCodeVerification()==Code_Verification) {
+        if (agent != null && BCrypt.checkpw(enteredPassword, agent.getMotDePasse()) && agent.getCodeVerification() == Code_Verification) {
             if (isActive(agent.getEmail())) {
                 loginAttempts = 0;
 
@@ -118,6 +120,10 @@ public class AgentCNSSDAO {
         sendMail(newVerificationCode, emailSubject, "mohammedroumami2016@gmail.com");
     }
     private AgentCNSS getAgentByEmail(String email) {
+        if (agentMap.containsKey(email)) {
+            return agentMap.get(email); // Agent is already in the HashMap, return it
+        }
+
         String sql = "SELECT * FROM agences WHERE Email = ?";
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -129,12 +135,15 @@ public class AgentCNSSDAO {
             resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                String nom = resultSet.getString("Email");
+                String nom = resultSet.getString("Nom");
                 String motDePasse = resultSet.getString("Pass");
                 int codeVerification = resultSet.getInt("Code_Verification");
-                Timestamp CodeExpiration=resultSet.getTimestamp("Code_Expiration");
+                Timestamp CodeExpiration = resultSet.getTimestamp("Code_Expiration");
                 int active = resultSet.getInt("Active");
-                agent = new AgentCNSS(nom, motDePasse, email, codeVerification,CodeExpiration, active);
+                agent = new AgentCNSS(nom, motDePasse, email, codeVerification, CodeExpiration, active);
+
+                // Add the fetched agent to the HashMap
+                agentMap.put(email, agent);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -309,7 +318,7 @@ public class AgentCNSSDAO {
 
 // ...
 
-    public String ajoutAgentCnss(String Nom, String email, String code) {
+    public String ajoutAgentCnss(String Nom, String email, String password) {
         String Nomagent = null;
         try {
             AgentCNSS existingAgent = getAgentParEmail(email);
@@ -321,10 +330,13 @@ public class AgentCNSSDAO {
                 String verificationCode = generateVerificationCode();
                 Timestamp expirationTime = new Timestamp(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5));
 
+                // Hash the password using BCrypt
+                String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
                 String insertQuery = "INSERT INTO agences (Email, Pass, Nom, Active, Code_Verification, Code_Expiration) VALUES (?, ?, ?, 1, ?, ?)";
                 PreparedStatement preparedStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
                 preparedStatement.setString(1, email);
-                preparedStatement.setString(2, code);
+                preparedStatement.setString(2, hashedPassword); // Store the hashed password
                 preparedStatement.setString(3, Nom);
                 preparedStatement.setString(4, verificationCode);
                 preparedStatement.setTimestamp(5, expirationTime);

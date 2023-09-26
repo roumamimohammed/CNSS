@@ -8,12 +8,9 @@ import org.cnss.calclulators.MonTauxRemboursementCalculator;
 import org.cnss.model.AgentCNSS;
 import org.cnss.model.DossierRembouresement;
 import org.cnss.model.Patient;
-
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
-
-import static org.cnss.UI.DocumentUI.AjouterDocument;
 
 public class DossierUI {
     static DossierRembouresementDAO dossierRembouresementDAO = new DossierRembouresementDAO();

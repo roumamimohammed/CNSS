@@ -45,22 +45,53 @@ public class DocumentsDAO {
 
         return documents;
     }
-
     public boolean ajouterDocument(Document document) {
         PreparedStatement preparedStatement = null;
         try {
-            String insertQuery = "INSERT INTO document (Code, Montant, Category, dossier,taux) VALUES (?, ?, ?, ?,?)";
-            preparedStatement = connection.prepareStatement(insertQuery);
-            preparedStatement.setString(1, document.getCode());
-            preparedStatement.setFloat(2, document.getMontant());
-            preparedStatement.setInt(3, document.getCategory().getCode_Categories());
-            preparedStatement.setInt(4, document.getDossierRembouresement().getCode());
-            preparedStatement.setInt(5, document.getTaux());
+            // Récupérer l'état actuel du dossier
+            int codeDossier = document.getDossierRembouresement().getCode();
+            String selectDossierQuery = "SELECT Etat FROM dossier WHERE Code = ?";
+            PreparedStatement selectDossierStatement = connection.prepareStatement(selectDossierQuery);
+            selectDossierStatement.setInt(1, codeDossier);
+            ResultSet dossierResultSet = selectDossierStatement.executeQuery();
 
-            int rowsAffected = preparedStatement.executeUpdate();
-            preparedStatement.close();
+            if (dossierResultSet.next()) {
+                String etatDossier = dossierResultSet.getString("Etat");
 
-            return rowsAffected > 0;
+                if ("VALIDE".equals(etatDossier)) {
+                    // L'état du dossier est VALIDE, vous pouvez ajouter le document
+                    String insertQuery = "INSERT INTO document (Code, Montant, Category, dossier, taux) VALUES (?, ?, ?, ?, ?)";
+                    preparedStatement = connection.prepareStatement(insertQuery);
+                    preparedStatement.setString(1, document.getCode());
+                    preparedStatement.setFloat(2, document.getMontant());
+                    preparedStatement.setInt(3, document.getCategory().getCode_Categories());
+                    preparedStatement.setInt(4, codeDossier);
+                    preparedStatement.setInt(5, document.getTaux());
+
+                    int rowsAffected = preparedStatement.executeUpdate();
+
+                    return rowsAffected > 0;
+                } else {
+                    // Mettre à jour l'état du dossier en VALIDE et ajouter le document
+                    String updateDossierQuery = "UPDATE dossier SET Etat = 'VALIDE' WHERE Code = ?";
+                    PreparedStatement updateDossierStatement = connection.prepareStatement(updateDossierQuery);
+                    updateDossierStatement.setInt(1, codeDossier);
+                    updateDossierStatement.executeUpdate();
+
+                    // Ajouter le document
+                    String insertQuery = "INSERT INTO document (Code, Montant, Category, dossier, taux) VALUES (?, ?, ?, ?, ?)";
+                    preparedStatement = connection.prepareStatement(insertQuery);
+                    preparedStatement.setString(1, document.getCode());
+                    preparedStatement.setFloat(2, document.getMontant());
+                    preparedStatement.setInt(3, document.getCategory().getCode_Categories());
+                    preparedStatement.setInt(4, codeDossier);
+                    preparedStatement.setInt(5, document.getTaux());
+
+                    int rowsAffected = preparedStatement.executeUpdate();
+
+                    return rowsAffected > 0;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -71,9 +102,10 @@ public class DocumentsDAO {
                     e.printStackTrace();
                 }
             }
-
-            return false;
         }
 
-    }  }
+        return false;
+    }
+
+}
 

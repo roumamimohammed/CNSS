@@ -27,7 +27,7 @@ public class DossierUI {
             System.out.println("1. Ajouter un Dossier");
             System.out.println("2. Mettre à jour Etat Dossier ");
             System.out.println("3. Supprimer un Dossier");
-            System.out.println("4. Afficher Mantant du rembourcement du dossier ");
+            System.out.println("4. Afficher Mantant du remboursement du dossier ");
             System.out.println("5. Quitter le Menu Dossiers");
             System.out.print("Entrez votre choix: ");
             choix = scanner.nextInt();
@@ -35,7 +35,11 @@ public class DossierUI {
 
             switch (choix) {
                 case 1:
-                    AjouterDossier(agentCNSS);
+                    try {
+                        AjouterDossier(agentCNSS);
+                    } catch (InputMismatchException e) {
+                        System.out.println("Saisie invalide. Assurez-vous d'entrer un nombre.");
+                    }
                     break;
                 case 2:
                     MettreAJourEtatDossier();
@@ -46,7 +50,6 @@ public class DossierUI {
                 case 4:
                     Mantantrembourcementdossier();
                     break;
-
                 case 5:
                     System.out.println("Retour au Menu Principal.");
                     break;
@@ -54,49 +57,51 @@ public class DossierUI {
                     System.out.println("Choix invalide. Veuillez réessayer.");
                     break;
             }
-        } while (choix != 4);
+        } while (choix != 5);
     }
-
     public static void AjouterDossier(AgentCNSSDAO agentCNSSDAO) {
-        Scanner scanner = new Scanner(System.in);
-        String agentConnecteEmail = AgentCnssUI.getAgentConnecteEmail();
-        AgentCNSS agentCNSS = agentCNSSDAO.getAgentParEmail(agentConnecteEmail);
-        PatientDAO patientDAO = new PatientDAO();
         System.out.println("Ajouter un Dossier:");
         System.out.println("Choisir le patient pour le dossier:");
-        patientDAO.afficherTousLespatients();
-        int codePatient = scanner.nextInt();
-        scanner.nextLine();
-        Patient patientTrouve = patientDAO.getPatientParMatricule(codePatient);
 
-        if (patientTrouve != null) {
-            DossierRembouresement dossier = dossierRembouresementDAO.ajouterDossierRemboursement(agentCNSS, patientTrouve);
-            if (dossier != null) {
-                System.out.println("Dossier ajouté avec succès.");
+        try {
+            int codePatient = scanner.nextInt();
+            scanner.nextLine();
+            PatientDAO patientDAO = new PatientDAO();
+            Patient patientTrouve = patientDAO.getPatientParMatricule(codePatient);
+
+            if (patientTrouve != null) {
+                AgentCNSS agentCNSS = agentCNSSDAO.getAgentParEmail(AgentCnssUI.getAgentConnecteEmail());
+                DossierRembouresement dossier = dossierRembouresementDAO.ajouterDossierRemboursement(agentCNSS, patientTrouve);
+                if (dossier != null) {
+                    System.out.println("Dossier ajouté avec succès.");
+                } else {
+                    System.out.println("Échec de l'ajout du dossier.");
+                }
             } else {
-                System.out.println("Échec de l'ajout du dossier.");
+                System.out.println("Patient non trouvé avec le code saisi.");
             }
-        } else {
-            System.out.println("Patient non trouvé avec le code saisi.");
+        } catch (InputMismatchException e) {
+            System.out.println("Saisie invalide. Assurez-vous d'entrer un nombre.");
         }
     }
-
-
 
     public static void SupprimerDossier() {
         System.out.println("Supprimer un Dossier:");
         System.out.print("Entrez le code du dossier que vous souhaitez supprimer: ");
-        int codeDossier = scanner.nextInt();
-        scanner.nextLine(); // Consommer la nouvelle ligne
-
-        DossierRembouresement dossier = recherchedossierparcode(codeDossier);
-        if (dossier != null) {
-            boolean supprime = dossierRembouresementDAO.deleteDossierRemboursement(codeDossier);
-            if (supprime) {
-                System.out.println("Dossier supprimé avec succès.");
-            } else {
-                System.out.println("Échec de la suppression du dossier.");
+        try {
+            int codeDossier = scanner.nextInt();
+            scanner.nextLine(); // Consommer la nouvelle ligne
+            DossierRembouresement dossier = recherchedossierparcode(codeDossier);
+            if (dossier != null) {
+                boolean supprime = dossierRembouresementDAO.deleteDossierRemboursement(codeDossier);
+                if (supprime) {
+                    System.out.println("Dossier supprimé avec succès.");
+                } else {
+                    System.out.println("Échec de la suppression du dossier.");
+                }
             }
+        } catch (InputMismatchException e) {
+            System.out.println("Code de dossier invalide. Assurez-vous d'entrer un nombre entier.");
         }
     }
 

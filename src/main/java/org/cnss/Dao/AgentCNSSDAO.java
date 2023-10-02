@@ -1,6 +1,8 @@
 package org.cnss.Dao;
 
 import java.util.HashMap;
+
+import org.cnss.Exceptions.CustomDAOException;
 import org.mindrot.jbcrypt.BCrypt;
 import java.sql.Timestamp;
 import java.util.Random;
@@ -35,13 +37,15 @@ public class AgentCNSSDAO {
         }
     }
     private HashMap<String, AgentCNSS> agentMap = new HashMap<>();
-    public AgentCNSS Authentified(String enteredEmail, String enteredPassword, int Code_Verification) throws GeneralSecurityException {
-        AgentCNSS agent = getAgentByEmail(enteredEmail);
+    public AgentCNSS Authentified(String enteredEmail, String enteredPassword, int Code_Verification) throws GeneralSecurityException, CustomDAOException {
+        try {  AgentCNSS agent = getAgentByEmail(enteredEmail);
         Scanner scanner = new Scanner(System.in);
         if (isBlocked(enteredEmail)) {
             System.out.println("Votre compte est bloqué. Entrer votre message à l'administrateur pour vous débloquer.");
             String enteredObject = scanner.nextLine();
-            sendMail(enteredObject, "Blocked", "mohammedroumami2016@gmail.com");
+            sendMail(enteredObject, "Blocked", "fadwafoufou0@gmail.com");
+            throw new CustomDAOException("Le compte est bloqué.");
+
         }
         if (agent != null && BCrypt.checkpw(enteredPassword, agent.getMotDePasse()) && agent.getCodeVerification() == Code_Verification) {
             if (isActive(agent.getEmail())) {
@@ -69,6 +73,10 @@ public class AgentCNSSDAO {
                 deactivateAgent(agent.getEmail());
             }
             return null;
+        }
+
+        } catch (GeneralSecurityException e) {
+            throw new CustomDAOException("Erreur lors de l'authentification.", e);
         }
     }
 
@@ -117,11 +125,11 @@ public class AgentCNSSDAO {
     private void sendVerificationCodeByEmail( String newVerificationCode) throws GeneralSecurityException {
 
         String emailSubject = "New Verification Code";
-        sendMail(newVerificationCode, emailSubject, "mohammedroumami2016@gmail.com");
+        sendMail(newVerificationCode, emailSubject, "fadwafoufou0@gmail.com");
     }
     private AgentCNSS getAgentByEmail(String email) {
         if (agentMap.containsKey(email)) {
-            return agentMap.get(email); // Agent is already in the HashMap, return it
+            return agentMap.get(email);
         }
 
         String sql = "SELECT * FROM agences WHERE Email = ?";
@@ -142,7 +150,6 @@ public class AgentCNSSDAO {
                 int active = resultSet.getInt("Active");
                 agent = new AgentCNSS(nom, motDePasse, email, codeVerification, CodeExpiration, active);
 
-                // Add the fetched agent to the HashMap
                 agentMap.put(email, agent);
             }
         } catch (SQLException e) {
@@ -220,7 +227,7 @@ public class AgentCNSSDAO {
 
                 if (activeStatus == 0) {
                     // Agent is blocked, send email to admin
-                    sendMail("hol","bonjour","mohammedroumami2016@gmail.com");
+                    sendMail("hol","bonjour","fadwafoufou0@gmail.com");
                     return true;
                 }
             }
@@ -330,13 +337,12 @@ public class AgentCNSSDAO {
                 String verificationCode = generateVerificationCode();
                 Timestamp expirationTime = new Timestamp(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5));
 
-                // Hash the password using BCrypt
                 String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
                 String insertQuery = "INSERT INTO agences (Email, Pass, Nom, Active, Code_Verification, Code_Expiration) VALUES (?, ?, ?, 1, ?, ?)";
                 PreparedStatement preparedStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
                 preparedStatement.setString(1, email);
-                preparedStatement.setString(2, hashedPassword); // Store the hashed password
+                preparedStatement.setString(2, hashedPassword);
                 preparedStatement.setString(3, Nom);
                 preparedStatement.setString(4, verificationCode);
                 preparedStatement.setTimestamp(5, expirationTime);
@@ -349,7 +355,7 @@ public class AgentCNSSDAO {
 
                 String emailSubject = "Verification Code";
                 String emailBody = "Your verification code is: " + verificationCode;
-                sendMail(emailBody, emailSubject, "mohammedroumami2016@gmail.com");
+                sendMail(emailBody, emailSubject, "fadwafoufou0@gmail.com");
             }
         } catch (SQLException | GeneralSecurityException e) {
             e.printStackTrace();

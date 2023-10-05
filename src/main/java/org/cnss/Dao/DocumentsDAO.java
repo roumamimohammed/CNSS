@@ -48,7 +48,6 @@ public class DocumentsDAO {
     public boolean ajouterDocument(Document document) {
         PreparedStatement preparedStatement = null;
         try {
-            // Récupérer l'état actuel du dossier
             int codeDossier = document.getDossierRembouresement().getCode();
             String selectDossierQuery = "SELECT Etat FROM dossier WHERE Code = ?";
             PreparedStatement selectDossierStatement = connection.prepareStatement(selectDossierQuery);
